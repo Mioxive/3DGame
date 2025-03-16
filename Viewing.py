@@ -1,4 +1,5 @@
 from panda3d.core import Vec3, WindowProperties
+from math import radians, cos, sin
 
 
 class CameraControl:
@@ -10,18 +11,31 @@ class CameraControl:
 
     def update_camera_position(self, dt):
         if self.is_spectating:
+            x_offset = 0
+            y_offset = 0
+            z_offset = 0
+            h = base.camera.getH()
+            p = base.camera.getP()
             if base.controls.key_map["forward"]:
-                base.camera.setPos(base.camera.getPos() + Vec3(0, self.camera_speed * dt, 0))
+                x_offset -= dt * self.camera_speed * sin(radians(h))
+                y_offset += dt * self.camera_speed * cos(radians(h))
+                z_offset += dt * self.camera_speed * sin(radians(p))
             if base.controls.key_map["backward"]:
-                base.camera.setPos(base.camera.getPos() + Vec3(0, -self.camera_speed * dt, 0))
+                x_offset += dt * self.camera_speed * sin(radians(h))
+                y_offset -= dt * self.camera_speed * cos(radians(h))
+                z_offset -= dt * self.camera_speed * sin(radians(p))
             if base.controls.key_map["left"]:
-                base.camera.setPos(base.camera.getPos() + Vec3(-self.camera_speed * dt, 0, 0))
+                x_offset -= dt * self.camera_speed * cos(radians(h))
+                y_offset -= dt * self.camera_speed * sin(radians(h))
             if base.controls.key_map["right"]:
-                base.camera.setPos(base.camera.getPos() + Vec3(self.camera_speed * dt, 0, 0))
+                x_offset += dt * self.camera_speed * cos(radians(h))
+                y_offset += dt * self.camera_speed * sin(radians(h))
             if base.controls.key_map["up"]:
-                base.camera.setPos(base.camera.getPos() + Vec3(0, 0, self.camera_speed * dt))
+                z_offset += dt * self.camera_speed
             if base.controls.key_map["down"]:
-                base.camera.setPos(base.camera.getPos() + Vec3(0, 0, -self.camera_speed * dt))
+                z_offset -= dt * self.camera_speed
+
+            base.camera.setPos(base.camera.getPos() + Vec3(x_offset, y_offset, z_offset))
         else:
             pass # когда камера прикреплена к танку
 
@@ -51,13 +65,11 @@ class MouseControl:
         self.last_mouse_x = self.center_x
         self.last_mouse_y = self.center_y
 
-        self.mousePointer = base.win.getPointer(0)
         self.is_captured = False
 
     def capture(self):
         if base.mouseWatcherNode.hasMouse():
             self.is_captured = True
-            self.mousePointer = base.win.getPointer(0)
             base.settings.winproperties.setCursorHidden(True)
             base.settings.winproperties.setMouseMode(WindowProperties.M_confined)
             base.settings.apply_settings()
