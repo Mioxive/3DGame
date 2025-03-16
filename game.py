@@ -1,7 +1,7 @@
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
 from panda3d.core import WindowProperties, Vec3, load_prc_file, ConfigVariableManager
-
+from Viewing import CameraControl, MouseControl
 
 # base - встроенный указатель Panda3D на класс игры (у нас Game) (__builtins__.base)
 # print(base) - <Game object at 0x00000000>
@@ -16,18 +16,16 @@ from panda3d.core import WindowProperties, Vec3, load_prc_file, ConfigVariableMa
 class GameSettings:
     def __init__(self):
         self.fullscreen = False
-        self.sensitivity = 10
-        self.camera_velocity = 10
+        self.sensitivity = 5
+        self.fov = 80
+        self.winproperties = WindowProperties()
+        self.winproperties.setFullscreen(self.fullscreen)
+        self.winproperties.setTitle("Demo")
+        load_prc_file("cfg.prc")
+        base.disableMouse()
 
     def apply_settings(self):
-        load_prc_file("cfg.prc")
-        ConfigVariableManager.getGlobalPtr().listVariables()
-        props = WindowProperties()
-        props.setFullscreen(self.fullscreen)
-        props.setTitle("Demo")
-        base.win.requestProperties(props)
-        base.disableMouse()
-        return self
+        base.win.requestProperties(self.winproperties)
 
 class GameEnvironment:
     def __init__(self):
@@ -46,7 +44,6 @@ class GameControls:
             "up": False,
             "down": False,
             "shoot": False,
-            "scope": False
         }
 
     def update_key_map(self, controlName, controlState):
@@ -67,33 +64,30 @@ class GameControls:
         base.accept("shift-up", self.update_key_map, ["down", False])
         base.accept("mouse1", self.update_key_map, ["shoot", True])
         base.accept("mouse1-up", self.update_key_map, ["shoot", False])
-        base.accept("mouse2", self.update_key_map, ["scope", True])
-        base.accept("mouse2-up", self.update_key_map, ["scope", False])
+        base.accept("mouse2", base.camera_controls.scope)
+        base.accept("escape", base.mouse_controls.switch_state)
+
 
 class Game(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
-        self.settings = GameSettings().apply_settings()
+        self.settings = GameSettings()
+        self.settings.apply_settings()
         self.environment = GameEnvironment()
         self.controls = GameControls()
+        self.mouse_controls = MouseControl()
+        self.camera_controls = CameraControl()
         self.controls.setup_controls()
         self.updateTask = self.taskMgr.add(self.update, "update")
+        self.mouse_controls.capture()
+
 
     def update(self, task):
         dt = globalClock.getDt()
-        self.update_camera_position(dt)
+
+        self.camera_controls.update_camera_rotation(dt)
+        self.camera_controls.update_camera_position(dt)
+
         return task.cont
 
-    def update_camera_position(self, dt):
-        if self.controls.key_map["forward"]:
-            self.camera.setPos(self.camera.getPos() + Vec3(0, self.settings.camera_velocity * dt, 0))
-        if self.controls.key_map["backward"]:
-            self.camera.setPos(self.camera.getPos() + Vec3(0, -self.settings.camera_velocity * dt, 0))
-        if self.controls.key_map["left"]:
-            self.camera.setPos(self.camera.getPos() + Vec3(-self.settings.camera_velocity * dt, 0, 0))
-        if self.controls.key_map["right"]:
-            self.camera.setPos(self.camera.getPos() + Vec3(self.settings.camera_velocity * dt, 0, 0))
-        if self.controls.key_map["up"]:
-            self.camera.setPos(self.camera.getPos() + Vec3(0, 0, self.settings.camera_velocity * dt))
-        if self.controls.key_map["down"]:
-            self.camera.setPos(self.camera.getPos() + Vec3(0, 0, -self.settings.camera_velocity * dt))
+
