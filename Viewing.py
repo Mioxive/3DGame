@@ -6,7 +6,7 @@ class CameraControl:
     def __init__(self):
         self.camera_speed = 10
         self.is_spectating = True
-        base.camera.setPos(Vec3(0, 0, 5))
+        camera.setPos(Vec3(0, 0, 5))
         base.camLens.setFov(base.settings.fov)
 
     def update_camera_position(self, dt):
@@ -14,10 +14,10 @@ class CameraControl:
             x_offset = 0
             y_offset = 0
             z_offset = 0
-            h = base.camera.getH()
-            p = base.camera.getP()
+            h = camera.getH()
+            p = camera.getP()
             if base.controls.key_map["forward"]:
-                x_offset -= dt * self.camera_speed * sin(radians(h))
+                x_offset -= dt * self.camera_speed * sin(radians(h)) # ниче сложного, в пеинте поигрался и понял как это работает
                 y_offset += dt * self.camera_speed * cos(radians(h))
                 z_offset += dt * self.camera_speed * sin(radians(p))
             if base.controls.key_map["backward"]:
@@ -35,7 +35,7 @@ class CameraControl:
             if base.controls.key_map["down"]:
                 z_offset -= dt * self.camera_speed
 
-            base.camera.setPos(base.camera.getPos() + Vec3(x_offset, y_offset, z_offset))
+            camera.setPos(camera.getPos() + Vec3(x_offset, y_offset, z_offset))
         else:
             pass # когда камера прикреплена к танку
 
@@ -44,12 +44,12 @@ class CameraControl:
             delta_x, delta_y = base.mouse_controls.get_movement()
 
             # Применяем поворот
-            new_h = base.camera.getH() - delta_x * dt * base.mouse_controls.sensitivity # нет ограничений: можем вертеть камерой по оси X на 360 градусов
-            new_p = base.camera.getP() - delta_y * dt * base.mouse_controls.sensitivity
+            new_h = camera.getH() - delta_x * dt * base.mouse_controls.sensitivity # нет ограничений: можем вертеть камерой по оси X на 360 градусов
+            new_p = camera.getP() - delta_y * dt * base.mouse_controls.sensitivity
             new_p = min(90, max(-90, new_p))    # а тут ограничения есть:
                                                 # мы не можем поднимать камеру выше 90 градусов и ниже -90 (сам попробуй сальто головой сделать)
                                                 # так что мы ограничиваем возможный диапазон между -90 и 90 градусов
-            base.camera.setHpr(new_h, new_p, 0)
+            camera.setHpr(new_h, new_p, 0)
 
 
 

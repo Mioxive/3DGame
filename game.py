@@ -1,6 +1,10 @@
+from idlelib.outwin import file_line_progs
+
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
-from panda3d.core import WindowProperties, Vec3, load_prc_file, ConfigVariableManager
+from panda3d.core import WindowProperties, Vec3, load_prc_file, ConfigVariableManager, CollisionNode, CollisionBox, CollisionPolygon
+from panda3d.bullet import BulletWorld, BulletTriangleMesh, BulletTriangleMeshShape, BulletRigidBodyNode, \
+    BulletDebugNode, BulletPlaneShape, BulletBoxShape
 from Viewing import CameraControl, MouseControl
 
 # base - встроенный указатель Panda3D на класс игры (у нас Game) (__builtins__.base)
@@ -29,10 +33,31 @@ class GameSettings:
 
 class GameEnvironment:
     def __init__(self):
-        self.environment = base.loader.loadModel("./map/map.obj")
+        self.environment = base.loader.loadModel("./mapbam/map.bam")
         self.environment.reparentTo(base.render)
+        self.world = BulletWorld()
+        self.world.setGravity(Vec3(0, 0, -9.81))
         base.render.setShaderAuto()
         self.environment.setHpr(0, 0, 0)
+        self.environment.flattenStrong()
+
+        mesh = BulletTriangleMesh()
+        for geom_node in self.environment.findAllMatches("**/+GeomNode"):
+            for i in range(geom_node.node().getNumGeoms()):
+                mesh.addGeom(geom_node.node().getGeom(i))
+
+        shape = BulletTriangleMeshShape(mesh, dynamic=False)
+        shape1 = BulletBoxShape(Vec3(1, 1, 1))
+        self.world_body = BulletRigidBodyNode("Environment")
+        self.world_body.setMass(0)
+        self.world_body.setKinematic(False)
+        self.world_body.addShape(shape)
+        base.render.attachNewNode(self.world_body)
+        self.world.attachRigidBody(self.world_body)
+        print(self.world_body.isStatic())
+        print(self.world.getRigidBodies())
+
+
 
 class GameControls:
     def __init__(self):
@@ -80,11 +105,16 @@ class Game(ShowBase):
         self.controls.setup_controls()
         self.updateTask = self.taskMgr.add(self.update, "update")
         self.mouse_controls.capture()
+        debug_node = BulletDebugNode("debug")
+        self.debugNP = render.attachNewNode(debug_node)
+        self.debugNP.show()
+        self.environment.world.setDebugNode(debug_node)
+
 
 
     def update(self, task):
         dt = globalClock.getDt()
-
+        self.environment.world.doPhysics(dt)
         self.camera_controls.update_camera_rotation(dt)
         self.camera_controls.update_camera_position(dt)
 
