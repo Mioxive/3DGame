@@ -33,7 +33,7 @@ class GameSettings:
 
 class GameEnvironment:
     def __init__(self):
-        self.environment = base.loader.loadModel("./mapbam/map.bam")
+        self.environment = base.loader.loadModel("./map/map.bam")
         self.environment.reparentTo(base.render)
         self.world = BulletWorld()
         self.world.setGravity(Vec3(0, 0, -9.81))
