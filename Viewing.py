@@ -1,4 +1,5 @@
-from panda3d.core import Vec3, WindowProperties
+from panda3d.bullet import BulletSphereShape, BulletRigidBodyNode
+from panda3d.core import Vec3, WindowProperties, BitMask32, Point3
 from math import radians, cos, sin
 
 
@@ -6,8 +7,19 @@ class CameraControl:
     def __init__(self):
         self.camera_speed = 10
         self.is_spectating = True
-        camera.setPos(Vec3(0, 0, 5))
         base.camLens.setFov(base.settings.fov)
+
+        self.cam_obj = BulletRigidBodyNode("camera collision")
+
+        self.cam_obj.setMass(1)
+        self.cam_obj.addShape(BulletSphereShape(0.4))
+
+        self.camera_control_node = render.attachNewNode(self.cam_obj)
+        base.world.bullet_world.attachRigidBody(self.cam_obj)
+
+        self.camera_control_node.setPos(Vec3(10, 10, 20))
+        # camera.reparentTo(self.camera_control_node)
+
 
     def update_camera_position(self, dt):
         if self.is_spectating:
