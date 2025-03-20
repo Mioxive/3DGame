@@ -54,7 +54,7 @@ class GameWorld:
 
         self.world_body = BulletRigidBodyNode("world")
         self.world_body.setMass(0)
-        self.world_body.setKinematic(False)
+        self.world_body.setStatic(True)
         self.world_body.addShape(shape)
         self.world_body.setFriction(0.5) # трение
 
@@ -115,9 +115,6 @@ class Game(ShowBase):
         self.debugNP = self.render.attachNewNode(debug_node)
         self.world.bullet_world.setDebugNode(debug_node)
         self.debugNP.show()
-        self.physics_node = NodePath("Physics-node")
-        self.physics_node.reparentTo(render)
-        print(self.world.bullet_world.getRigidBodies())
 
 
 

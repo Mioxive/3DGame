@@ -12,13 +12,15 @@ class CameraControl:
         self.cam_obj = BulletRigidBodyNode("camera collision")
 
         self.cam_obj.setMass(1)
+        self.cam_obj.setGravity(Vec3(0, 0, 0))
         self.cam_obj.addShape(BulletSphereShape(0.4))
+
 
         self.camera_control_node = render.attachNewNode(self.cam_obj)
         base.world.bullet_world.attachRigidBody(self.cam_obj)
 
         self.camera_control_node.setPos(Vec3(10, 10, 20))
-        # camera.reparentTo(self.camera_control_node)
+
 
 
     def update_camera_position(self, dt):
@@ -47,7 +49,9 @@ class CameraControl:
             if base.controls.key_map["down"]:
                 z_offset -= dt * self.camera_speed
 
-            camera.setPos(camera.getPos() + Vec3(x_offset, y_offset, z_offset))
+
+            self.cam_obj.setLinearVelocity(Vec3(x_offset, y_offset, z_offset)) # TODO: не работает, движения нет, хз может надо переписывать под BulletCharacterControllerNode
+            camera.setPos(self.camera_control_node.getPos())
         else:
             pass # когда камера прикреплена к танку
 
