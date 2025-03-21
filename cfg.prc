@@ -1,3 +1,4 @@
 textures-power-2 none
 transform-cache 0
-show-frame-rate 1
+show-frame-rate true
+win-size 1840 980

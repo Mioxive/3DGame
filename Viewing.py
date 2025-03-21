@@ -1,23 +1,19 @@
-from panda3d.bullet import BulletSphereShape, BulletRigidBodyNode
-from panda3d.core import Vec3, WindowProperties, BitMask32, Point3
+from panda3d.bullet import BulletSphereShape, BulletCharacterControllerNode
+from panda3d.core import Vec3, WindowProperties
 from math import radians, cos, sin
 
 
 class CameraControl:
     def __init__(self):
-        self.camera_speed = 10
+        self.camera_speed = 2000
         self.is_spectating = True
         base.camLens.setFov(base.settings.fov)
 
-        self.cam_obj = BulletRigidBodyNode("camera collision")
-
-        self.cam_obj.setMass(1)
-        self.cam_obj.setGravity(Vec3(0, 0, 0))
-        self.cam_obj.addShape(BulletSphereShape(0.4))
-
-
+        self.cam_obj = BulletCharacterControllerNode(BulletSphereShape(0.8), 0.3, "camera collision")
+        self.cam_obj.setGravity(0.0)
         self.camera_control_node = render.attachNewNode(self.cam_obj)
-        base.world.bullet_world.attachRigidBody(self.cam_obj)
+
+        base.world.bullet_world.attachCharacter(self.camera_control_node.node())
 
         self.camera_control_node.setPos(Vec3(10, 10, 20))
 
@@ -25,33 +21,33 @@ class CameraControl:
 
     def update_camera_position(self, dt):
         if self.is_spectating:
-            x_offset = 0
-            y_offset = 0
-            z_offset = 0
+            moving_vec = Vec3(0, 0, 0)
             h = camera.getH()
             p = camera.getP()
             if base.controls.key_map["forward"]:
-                x_offset -= dt * self.camera_speed * sin(radians(h)) # ниче сложного, в пеинте поигрался и понял как это работает
-                y_offset += dt * self.camera_speed * cos(radians(h))
-                z_offset += dt * self.camera_speed * sin(radians(p))
+                moving_vec.x -= dt * self.camera_speed * sin(radians(h)) # ниче сложного, в пеинте поигрался и понял как это работает
+                moving_vec.y += dt * self.camera_speed * cos(radians(h))
+                moving_vec.z += dt * self.camera_speed * sin(radians(p))
             if base.controls.key_map["backward"]:
-                x_offset += dt * self.camera_speed * sin(radians(h))
-                y_offset -= dt * self.camera_speed * cos(radians(h))
-                z_offset -= dt * self.camera_speed * sin(radians(p))
+                moving_vec.x += dt * self.camera_speed * sin(radians(h))
+                moving_vec.y -= dt * self.camera_speed * cos(radians(h))
+                moving_vec.z -= dt * self.camera_speed * sin(radians(p))
             if base.controls.key_map["left"]:
-                x_offset -= dt * self.camera_speed * cos(radians(h))
-                y_offset -= dt * self.camera_speed * sin(radians(h))
+                moving_vec.x -= dt * self.camera_speed * cos(radians(h))
+                moving_vec.y -= dt * self.camera_speed * sin(radians(h))
             if base.controls.key_map["right"]:
-                x_offset += dt * self.camera_speed * cos(radians(h))
-                y_offset += dt * self.camera_speed * sin(radians(h))
+                moving_vec.x += dt * self.camera_speed * cos(radians(h))
+                moving_vec.y += dt * self.camera_speed * sin(radians(h))
             if base.controls.key_map["up"]:
-                z_offset += dt * self.camera_speed
+                moving_vec.z += dt * self.camera_speed
             if base.controls.key_map["down"]:
-                z_offset -= dt * self.camera_speed
+                moving_vec.z -= dt * self.camera_speed
 
 
-            self.cam_obj.setLinearVelocity(Vec3(x_offset, y_offset, z_offset)) # TODO: не работает, движения нет, хз может надо переписывать под BulletCharacterControllerNode
+            self.cam_obj.setLinearMovement(moving_vec, False)
+
             camera.setPos(self.camera_control_node.getPos())
+
         else:
             pass # когда камера прикреплена к танку
 

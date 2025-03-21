@@ -27,6 +27,7 @@ class GameSettings:
         self.winproperties = WindowProperties()
         self.winproperties.setFullscreen(self.fullscreen)
         self.winproperties.setTitle("Demo")
+        self.winproperties.setSize(1840, 980)
         load_prc_file("cfg.prc")
         base.disableMouse()
 
@@ -108,23 +109,23 @@ class Game(ShowBase):
         self.controls.setup_controls()
         self.updateTask = self.taskMgr.add(self.update, "update")
         self.mouse_controls.capture()
-        debug_node = BulletDebugNode("debug")
-        debug_node.showWireframe(True)
-        debug_node.showNormals(True)
-        debug_node.showBoundingBoxes(True)
-        self.debugNP = self.render.attachNewNode(debug_node)
-        self.world.bullet_world.setDebugNode(debug_node)
-        self.debugNP.show()
-
 
 
 
     def update(self, task):
         dt = globalClock.getDt()
-        self.world.bullet_world.doPhysics(dt)
+
         self.camera_controls.update_camera_rotation(dt)
         self.camera_controls.update_camera_position(dt)
         self.world.bullet_world.doPhysics(dt)
 
         return task.cont
 
+    def enable_debug(self):
+        debug_node = BulletDebugNode("debug")
+        debug_node.showWireframe(True)
+        debug_node.showNormals(True)
+        debug_node.showBoundingBoxes(True)
+        debugNP = self.render.attachNewNode(debug_node)
+        self.world.bullet_world.setDebugNode(debug_node)
+        debugNP.show()
