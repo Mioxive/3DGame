@@ -21,6 +21,7 @@ from Viewing import CameraControl, MouseControl
 
 class GameSettings:
     def __init__(self):
+        load_prc_file("cfg.prc")
         self.fullscreen = False
         self.sensitivity = 5
         self.fov = 80
@@ -28,14 +29,13 @@ class GameSettings:
         self.winproperties.setFullscreen(self.fullscreen)
         self.winproperties.setTitle("Demo")
         self.winproperties.setSize(1840, 980)
-        load_prc_file("cfg.prc")
         base.disableMouse()
 
     def apply_settings(self):
         base.win.requestProperties(self.winproperties)
 
 class GameWorld:
-    def __init__(self):
+    def __init__(self): 
         self.world = base.loader.loadModel("./map/map.bam")
         self.world.reparentTo(base.render)
         base.render.setShaderAuto()

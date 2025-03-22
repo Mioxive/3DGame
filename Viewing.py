@@ -9,43 +9,47 @@ class CameraControl:
         self.is_spectating = True
         base.camLens.setFov(base.settings.fov)
 
-        self.cam_obj = BulletCharacterControllerNode(BulletSphereShape(0.8), 0.3, "camera collision")
+        self.cam_obj = BulletCharacterControllerNode(BulletSphereShape(0.5), 0.4, "camera collision")
         self.cam_obj.setGravity(0.0)
         self.camera_control_node = render.attachNewNode(self.cam_obj)
 
         base.world.bullet_world.attachCharacter(self.camera_control_node.node())
 
         self.camera_control_node.setPos(Vec3(10, 10, 20))
+        
 
+        self.moving_vec = Vec3(0, 0, 0)
+        self.target_vec = Vec3(0, 0, 0)
+        self.acceleration = 16  # ускорение
 
 
     def update_camera_position(self, dt):
         if self.is_spectating:
-            moving_vec = Vec3(0, 0, 0)
+            self.target_vec = Vec3(0, 0, 0)
             h = camera.getH()
             p = camera.getP()
             if base.controls.key_map["forward"]:
-                moving_vec.x -= dt * self.camera_speed * sin(radians(h)) # ниче сложного, в пеинте поигрался и понял как это работает
-                moving_vec.y += dt * self.camera_speed * cos(radians(h))
-                moving_vec.z += dt * self.camera_speed * sin(radians(p))
+                self.target_vec.x -= self.camera_speed * sin(radians(h)) 
+                self.target_vec.y += self.camera_speed * cos(radians(h))
+                self.target_vec.z += self.camera_speed * sin(radians(p))
             if base.controls.key_map["backward"]:
-                moving_vec.x += dt * self.camera_speed * sin(radians(h))
-                moving_vec.y -= dt * self.camera_speed * cos(radians(h))
-                moving_vec.z -= dt * self.camera_speed * sin(radians(p))
+                self.target_vec.x += self.camera_speed * sin(radians(h))
+                self.target_vec.y -= self.camera_speed * cos(radians(h))
+                self.target_vec.z -= self.camera_speed * sin(radians(p))
             if base.controls.key_map["left"]:
-                moving_vec.x -= dt * self.camera_speed * cos(radians(h))
-                moving_vec.y -= dt * self.camera_speed * sin(radians(h))
+                self.target_vec.x -= self.camera_speed * cos(radians(h))
+                self.target_vec.y -= self.camera_speed * sin(radians(h))
             if base.controls.key_map["right"]:
-                moving_vec.x += dt * self.camera_speed * cos(radians(h))
-                moving_vec.y += dt * self.camera_speed * sin(radians(h))
+                self.target_vec.x += self.camera_speed * cos(radians(h))
+                self.target_vec.y += self.camera_speed * sin(radians(h))
             if base.controls.key_map["up"]:
-                moving_vec.z += dt * self.camera_speed
+                self.target_vec.z += self.camera_speed
             if base.controls.key_map["down"]:
-                moving_vec.z -= dt * self.camera_speed
+                self.target_vec.z -= self.camera_speed
 
+            self.moving_vec = self.moving_vec + (self.target_vec - self.moving_vec) * self.acceleration * dt
 
-            self.cam_obj.setLinearMovement(moving_vec, False)
-
+            self.cam_obj.setLinearMovement(self.moving_vec * dt, False)
             camera.setPos(self.camera_control_node.getPos())
 
         else:
@@ -59,14 +63,14 @@ class CameraControl:
             new_h = camera.getH() - delta_x * dt * base.mouse_controls.sensitivity # нет ограничений: можем вертеть камерой по оси X на 360 градусов
             new_p = camera.getP() - delta_y * dt * base.mouse_controls.sensitivity
             new_p = min(90, max(-90, new_p))    # а тут ограничения есть:
-                                                # мы не можем поднимать камеру выше 90 градусов и ниже -90 (сам попробуй сальто головой сделать)
+                                                # мы не можем поднимать камеру выше 90 градусов и ниже -90
                                                 # так что мы ограничиваем возможный диапазон между -90 и 90 градусов
             camera.setHpr(new_h, new_p, 0)
 
 
-
     def scope(self):
         pass # прицел-zoom
+
 
 class MouseControl:
     def __init__(self):
