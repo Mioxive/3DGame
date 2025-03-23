@@ -1,4 +1,3 @@
-from idlelib.outwin import file_line_progs
 
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.ShowBase import ShowBase
