@@ -9,7 +9,7 @@ class CameraControl:
         self.is_spectating = True
         base.camLens.setFov(base.settings.fov)
 
-        self.cam_obj = BulletCharacterControllerNode(BulletSphereShape(0.8), 0.2, "camera collision")
+        self.cam_obj = BulletCharacterControllerNode(BulletSphereShape(1.1), 0.2, "camera collision")
         self.cam_obj.setGravity(0.0)
         self.camera_control_node = render.attachNewNode(self.cam_obj)
 
@@ -48,7 +48,7 @@ class CameraControl:
             self.moving_vec = self.moving_vec + (self.target_vec - self.moving_vec) * self.acceleration * dt
 
             self.cam_obj.setLinearMovement(self.moving_vec * dt, False)
-            camera.setPos(self.camera_control_node.getPos() - Vec3(0, 0.2, 0))
+            camera.setPos(self.camera_control_node.getPos())
 
         else:
             pass  # когда камера прикреплена к танку

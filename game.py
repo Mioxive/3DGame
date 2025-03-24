@@ -1,21 +1,12 @@
-
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
-from panda3d.core import WindowProperties, Vec3, load_prc_file, ConfigVariableManager, CollisionNode, CollisionBox, \
-    CollisionPolygon, BitMask32, NodePath
+from panda3d.core import WindowProperties, Vec3, load_prc_file, AmbientLight
 from panda3d.bullet import BulletWorld, BulletTriangleMesh, BulletTriangleMeshShape, BulletRigidBodyNode, \
-    BulletDebugNode, BulletSphereShape, BulletBoxShape
+    BulletDebugNode
 from Viewing import CameraControl, MouseControl
 
 # base - встроенный указатель Panda3D на класс игры (у нас Game) (__builtins__.base)
-# print(base) - <Game object at 0x00000000>
-
-# Some key variables used in all Panda3D scripts are actually attributes of the ShowBase instance.
-# When creating an instance of this class, it will write many of these variables to the built-in scope of the Python interpreter,
-# so that they are accessible to any Python module, without the need for extra imports.
-# For example, the ShowBase instance itself is accessible anywhere through the base variable.
-# Все встроенные указатели: https://docs.panda3d.org/1.10/python/reference/builtins#module-builtins
 
 
 class GameSettings:
@@ -34,11 +25,14 @@ class GameSettings:
         base.win.requestProperties(self.winproperties)
 
 class GameWorld:
-    def __init__(self): 
+    def __init__(self):
         self.world = base.loader.loadModel("./map/map.bam")
         self.world.reparentTo(base.render)
         base.render.setShaderAuto()
-        self.world.setHpr(0, 0, 0)
+        self.alight = AmbientLight("alight")
+        self.alight.setColor((1.8, 1.8, 1.8, 1))
+        self.alight_node = render.attachNewNode(self.alight)
+        self.world.setLight(self.alight_node)
 
 
         self.world.flattenStrong()
@@ -50,11 +44,11 @@ class GameWorld:
             for i in range(geom_node.node().getNumGeoms()):
                 mesh.addGeom(geom_node.node().getGeom(i))
 
-        shape = BulletTriangleMeshShape(mesh, dynamic=False)
+        shape = BulletTriangleMeshShape(mesh, dynamic=False) # собираем коллизию из геометрии
 
         self.world_body = BulletRigidBodyNode("world")
         self.world_body.setMass(0)
-        self.world_body.setStatic(True)
+        self.world_body.setStatic(True) # статичный объект
         self.world_body.addShape(shape)
         self.world_body.setFriction(0.5) # трение
 
@@ -108,7 +102,7 @@ class Game(ShowBase):
         self.controls.setup_controls()
         self.updateTask = self.taskMgr.add(self.update, "update")
         self.mouse_controls.capture()
-
+        self.display_scene_graph()
 
 
     def update(self, task):
@@ -128,3 +122,15 @@ class Game(ShowBase):
         debugNP = self.render.attachNewNode(debug_node)
         self.world.bullet_world.setDebugNode(debug_node)
         debugNP.show()
+
+    def display_scene_graph(self):
+        for child in self.render.getChildren():
+            print(self.render.getName())
+            def dfs(node):
+                if not node:
+                    return
+                print(node.getName())
+                for child in node.getChildren():
+                    dfs(child)
+            dfs(child)
+            print()
