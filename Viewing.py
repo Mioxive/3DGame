@@ -1,5 +1,5 @@
 from panda3d.bullet import BulletSphereShape, BulletCharacterControllerNode
-from panda3d.core import Vec3, WindowProperties
+from panda3d.core import Vec3, WindowProperties, NodePath
 from math import radians, cos, sin
 
 
@@ -9,13 +9,17 @@ class CameraControl:
         self.is_spectating = True
         base.camLens.setFov(base.settings.fov)
 
+        self.main_cam_node = NodePath("camera stuff")
+        self.main_cam_node.reparentTo(render)
+
         self.cam_obj = BulletCharacterControllerNode(BulletSphereShape(1.1), 0.2, "camera collision")
         self.cam_obj.setGravity(0.0)
-        self.camera_control_node = render.attachNewNode(self.cam_obj)
+        self.camera_control_node = self.main_cam_node.attachNewNode(self.cam_obj)
 
         base.world.bullet_world.attachCharacter(self.camera_control_node.node())
 
         self.camera_control_node.setPos(Vec3(10, 10, 20))
+        camera.reparentTo(self.main_cam_node)
 
         self.moving_vec = Vec3(0, 0, 0)
         self.target_vec = Vec3(0, 0, 0)

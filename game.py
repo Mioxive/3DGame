@@ -1,24 +1,25 @@
+import random
+
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
-from panda3d.core import WindowProperties, Vec3, load_prc_file, AmbientLight
+from panda3d.core import WindowProperties, Vec3, loadPrcFile, AmbientLight, NodePath
 from panda3d.bullet import BulletWorld, BulletTriangleMesh, BulletTriangleMeshShape, BulletRigidBodyNode, \
     BulletDebugNode
 from Viewing import CameraControl, MouseControl
 
+loadPrcFile("cfg.prc")
 # base - встроенный указатель Panda3D на класс игры (у нас Game) (__builtins__.base)
 
 
 class GameSettings:
     def __init__(self):
-        load_prc_file("cfg.prc")
         self.fullscreen = False
         self.sensitivity = 5
         self.fov = 80
         self.winproperties = WindowProperties()
         self.winproperties.setFullscreen(self.fullscreen)
         self.winproperties.setTitle("Demo")
-        self.winproperties.setSize(1840, 980)
         base.disableMouse()
 
     def apply_settings(self):
@@ -26,12 +27,14 @@ class GameSettings:
 
 class GameWorld:
     def __init__(self):
-        self.world = base.loader.loadModel("./map/map.bam")
-        self.world.reparentTo(base.render)
-        base.render.setShaderAuto()
+        self.main_world_node = NodePath("world node")
+        self.main_world_node.reparentTo(render)
+        self.world = loader.loadModel("./map/map.bam")
+        self.world.reparentTo(self.main_world_node)
+        render.setShaderAuto()
         self.alight = AmbientLight("alight")
         self.alight.setColor((1.8, 1.8, 1.8, 1))
-        self.alight_node = render.attachNewNode(self.alight)
+        self.alight_node = self.main_world_node.attachNewNode(self.alight)
         self.world.setLight(self.alight_node)
 
 
@@ -52,7 +55,7 @@ class GameWorld:
         self.world_body.addShape(shape)
         self.world_body.setFriction(0.5) # трение
 
-        render.attachNewNode(self.world_body)
+        self.main_world_node.attachNewNode(self.world_body)
         self.bullet_world.attachRigidBody(self.world_body)
 
 
@@ -134,3 +137,5 @@ class Game(ShowBase):
                     dfs(child)
             dfs(child)
             print()
+
+
