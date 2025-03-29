@@ -29,8 +29,9 @@ class Tank:
         shape = BulletTriangleMeshShape(mesh, dynamic=True)
 
         tank_body = BulletRigidBodyNode(name)
-        tank_body.setMass(1000)
+        tank_body.setMass(30000)
         tank_body.setStatic(False)
+        tank_body.setKinematic(False)
         tank_body.addShape(shape)
         tank_body.setFriction(0.5)
 
@@ -87,7 +88,7 @@ class Tank:
 
         self.update_tank_pos(dt)
         self.model.setPosHpr(self.tank_body_node.getPos(), self.tank_body_node.getHpr())
-        self.gun.setHpr(self.turret.getHpr())
+        #self.gun.setHpr(self.turret.getHpr())
 
         return task.cont
 
