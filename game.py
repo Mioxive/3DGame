@@ -7,6 +7,7 @@ from panda3d.core import WindowProperties, Vec3, loadPrcFile, AmbientLight, Node
 from panda3d.bullet import BulletWorld, BulletTriangleMesh, BulletTriangleMeshShape, BulletRigidBodyNode, \
     BulletDebugNode
 from Viewing import CameraControl, MouseControl
+from Tank import Tank
 
 loadPrcFile("cfg.prc")
 # base - встроенный указатель Panda3D на класс игры (у нас Game) (__builtins__.base)
@@ -58,7 +59,6 @@ class GameWorld:
         self.main_world_node.attachNewNode(self.world_body)
         self.bullet_world.attachRigidBody(self.world_body)
 
-
 class GameControls(DirectObject):
     def __init__(self):
         super().__init__()
@@ -106,6 +106,10 @@ class Game(ShowBase):
         self.updateTask = self.taskMgr.add(self.update, "update")
         self.mouse_controls.capture()
         self.display_scene_graph()
+        self.allTanks = NodePath("Tanks")
+        self.allTanks.reparentTo(render)
+        self.localPlayer = Tank("localPlayer", Vec3(-30, -15, 0), False, self.allTanks)
+        self.enable_debug()
 
 
     def update(self, task):
@@ -137,5 +141,4 @@ class Game(ShowBase):
                     dfs(child)
             dfs(child)
             print()
-
 

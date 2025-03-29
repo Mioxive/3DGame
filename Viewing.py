@@ -55,7 +55,7 @@ class CameraControl:
             camera.setPos(self.camera_control_node.getPos())
 
         else:
-            pass  # когда камера прикреплена к танку
+            self.main_cam_node.setPos(base.localPlayer.main_tank_node.getPos() + Vec3(0, -4, 5))
 
     def update_camera_rotation(self, dt):
         if base.mouse_controls.is_captured:
@@ -92,6 +92,7 @@ class MouseControl:
             base.settings.winproperties.setMouseMode(WindowProperties.M_confined)
             base.settings.apply_settings()
             self.center()
+            
 
     def release(self):
         self.is_captured = False
