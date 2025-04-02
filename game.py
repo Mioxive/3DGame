@@ -92,6 +92,7 @@ class GameControls(DirectObject):
         self.accept("mouse1-up", self.update_key_map, ["shoot", False])
         self.accept("lshift", base.camera_controls.scope)
         self.accept("escape", base.mouse_controls.switch_state)
+        self.accept("f1", base.toggle_debug)
 
 class Game(ShowBase):
     def __init__(self):
@@ -109,26 +110,28 @@ class Game(ShowBase):
         self.allTanks.reparentTo(render)
         self.localPlayer = Tank("localPlayer", Vec3(-30, -15, 0), False, self.allTanks)
         self.render.setAntialias(AntialiasAttrib.MAuto)
-        self.enable_debug()
+        self.setup_debug()
         self.display_scene_graph(render)
+        self.enableParticles()
+
 
     def update(self, task):
         dt = globalClock.getDt()
 
         self.camera_controls.update_camera_rotation(dt)
         self.camera_controls.update_camera_position(dt)
-        self.world.bullet_world.doPhysics(dt)
+        self.world.bullet_world.doPhysics(dt, 10, 1.0/180.0)
 
         return task.cont
 
-    def enable_debug(self):
+    def setup_debug(self):
         debug_node = BulletDebugNode("debug")
         debug_node.showWireframe(True)
         debug_node.showNormals(True)
+        debug_node.showConstraints(True)
         debug_node.showBoundingBoxes(True)
-        debugNP = self.render.attachNewNode(debug_node)
+        self.debugNP = self.render.attachNewNode(debug_node)
         self.world.bullet_world.setDebugNode(debug_node)
-        debugNP.show()
 
     def display_scene_graph(self, node):
         def dfs(node, tabs=1):
@@ -136,6 +139,12 @@ class Game(ShowBase):
             for neighbour in node.getChildren():
                 dfs(neighbour, tabs=tabs+1)
 
+        print(render)
         for nd in render.getChildren():
-            print(render)
-            dfs(nd)
+            dfs(nd, 2)
+
+    def toggle_debug(self):
+        if self.debugNP.isHidden():
+            self.debugNP.show()
+        else:
+            self.debugNP.hide()

@@ -1,11 +1,11 @@
 from panda3d.bullet import BulletSphereShape, BulletCharacterControllerNode
-from panda3d.core import Vec3, WindowProperties, NodePath
+from panda3d.core import Vec3, WindowProperties, NodePath, BitMask32
 from math import radians, cos, sin
 
 
 class CameraControl:
     def __init__(self):
-        self.camera_speed = 2000
+        self.camera_speed = 25
         self.is_spectating = True
         base.camLens.setFov(base.settings.fov)
 
@@ -15,7 +15,7 @@ class CameraControl:
         self.cam_obj = BulletCharacterControllerNode(BulletSphereShape(1.1), 0.2, "camera collision")
         self.cam_obj.setGravity(0.0)
         self.camera_control_node = self.main_cam_node.attachNewNode(self.cam_obj)
-
+        self.camera_control_node.setCollideMask(BitMask32.allOn())
         base.world.bullet_world.attachCharacter(self.camera_control_node.node())
 
         self.camera_control_node.setPos(Vec3(10, 10, 20))
@@ -51,11 +51,11 @@ class CameraControl:
 
             self.moving_vec = self.moving_vec + (self.target_vec - self.moving_vec) * self.acceleration * dt
 
-            self.cam_obj.setLinearMovement(self.moving_vec * dt, False)
+            self.cam_obj.setLinearMovement(self.moving_vec, False)
             camera.setPos(self.camera_control_node.getPos())
 
         else:
-            self.main_cam_node.setPos(base.localPlayer.main_tank_node.getPos() + Vec3(0, -4, 5))
+            self.main_cam_node.setPos(base.localPlayer.main_tank_node.getPos())
 
     def update_camera_rotation(self, dt):
         if base.mouse_controls.is_captured:
