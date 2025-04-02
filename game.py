@@ -3,7 +3,7 @@ import random
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
-from panda3d.core import WindowProperties, Vec3, loadPrcFile, AmbientLight, NodePath
+from panda3d.core import WindowProperties, Vec3, loadPrcFile, AmbientLight, NodePath, AntialiasAttrib
 from panda3d.bullet import BulletWorld, BulletTriangleMesh, BulletTriangleMeshShape, BulletRigidBodyNode, \
     BulletDebugNode
 from Viewing import CameraControl, MouseControl
@@ -95,7 +95,7 @@ class GameControls(DirectObject):
 
 class Game(ShowBase):
     def __init__(self):
-        ShowBase.__init__(self)
+        super().__init__(self)
         self.settings = GameSettings()
         self.settings.apply_settings()
         self.world = GameWorld()
@@ -105,12 +105,12 @@ class Game(ShowBase):
         self.controls.setup_controls()
         self.updateTask = self.taskMgr.add(self.update, "update")
         self.mouse_controls.capture()
-        self.display_scene_graph()
         self.allTanks = NodePath("Tanks")
         self.allTanks.reparentTo(render)
         self.localPlayer = Tank("localPlayer", Vec3(-30, -15, 0), False, self.allTanks)
+        self.render.setAntialias(AntialiasAttrib.MAuto)
         self.enable_debug()
-
+        self.display_scene_graph(render)
 
     def update(self, task):
         dt = globalClock.getDt()
@@ -130,15 +130,12 @@ class Game(ShowBase):
         self.world.bullet_world.setDebugNode(debug_node)
         debugNP.show()
 
-    def display_scene_graph(self):
-        for child in self.render.getChildren():
-            print(self.render.getName())
-            def dfs(node):
-                if not node:
-                    return
-                print(node.getName())
-                for child in node.getChildren():
-                    dfs(child)
-            dfs(child)
-            print()
+    def display_scene_graph(self, node):
+        def dfs(node, tabs=1):
+            print("   " * (tabs-1) + "╰--" + node.getName())
+            for neighbour in node.getChildren():
+                dfs(neighbour, tabs=tabs+1)
 
+        for nd in render.getChildren():
+            print(render)
+            dfs(nd)
