@@ -3,13 +3,15 @@ import random
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
-from panda3d.core import WindowProperties, Vec3, loadPrcFile, AmbientLight, NodePath, AntialiasAttrib
+from panda3d.core import WindowProperties, Vec3, loadPrcFile, AmbientLight, NodePath, AntialiasAttrib, loadPrcFileData
 from panda3d.bullet import BulletWorld, BulletTriangleMesh, BulletTriangleMeshShape, BulletRigidBodyNode, \
     BulletDebugNode
 from Viewing import CameraControl, MouseControl
 from Tank import Tank
 
 loadPrcFile("cfg.prc")
+# loadPrcFileData("", "want-directtools #t")
+# loadPrcFileData("", "want-tk #t")
 # base - встроенный указатель Panda3D на класс игры (у нас Game) (__builtins__.base)
 
 
@@ -93,6 +95,7 @@ class GameControls(DirectObject):
         self.accept("lshift", base.camera_controls.scope)
         self.accept("escape", base.mouse_controls.switch_state)
         self.accept("f1", base.toggle_debug)
+        self.accept("f3", base.connect_disconnect_camera)
 
 class Game(ShowBase):
     def __init__(self):
@@ -109,6 +112,7 @@ class Game(ShowBase):
         self.allTanks = NodePath("Tanks")
         self.allTanks.reparentTo(render)
         self.localPlayer = Tank("localPlayer", Vec3(-30, -15, 0), False, self.allTanks)
+        self.camera_controls.attach_player(self.localPlayer)
         self.render.setAntialias(AntialiasAttrib.MAuto)
         self.setup_debug()
         self.display_scene_graph(render)
@@ -148,3 +152,9 @@ class Game(ShowBase):
             self.debugNP.show()
         else:
             self.debugNP.hide()
+
+    def connect_disconnect_camera(self):
+        if not self.localPlayer.has_camera:
+            self.camera_controls.attach_player(self.localPlayer)
+        else:
+            self.camera_controls.unattach_player()
