@@ -5,7 +5,7 @@ from direct.showbase.ShowBase import ShowBase
 from direct.showbase.ShowBaseGlobal import globalClock
 from panda3d.core import WindowProperties, Vec3, loadPrcFile, AmbientLight, NodePath, AntialiasAttrib, loadPrcFileData
 from panda3d.bullet import BulletWorld, BulletTriangleMesh, BulletTriangleMeshShape, BulletRigidBodyNode, \
-    BulletDebugNode
+    BulletDebugNode, BulletPlaneShape
 from Viewing import CameraControl, MouseControl
 from Tank import Tank
 
@@ -32,25 +32,26 @@ class GameWorld:
     def __init__(self):
         self.main_world_node = NodePath("world node")
         self.main_world_node.reparentTo(render)
-        self.world = loader.loadModel("./map/map.bam")
-        self.world.reparentTo(self.main_world_node)
+        # self.world = loader.loadModel("./map/map.bam")
+        # self.world.reparentTo(self.main_world_node)
         render.setShaderAuto()
         self.alight = AmbientLight("alight")
         self.alight.setColor((1.8, 1.8, 1.8, 1))
         self.alight_node = self.main_world_node.attachNewNode(self.alight)
-        self.world.setLight(self.alight_node)
-
-
-        self.world.flattenStrong()
+        # self.world.setLight(self.alight_node)
+        #
+        # self.world.flattenStrong()
         self.bullet_world = BulletWorld()
         self.bullet_world.setGravity(Vec3(0, 0, -9.81))
 
-        mesh = BulletTriangleMesh()
-        for geom_node in self.world.findAllMatches("**/+GeomNode"):
-            for i in range(geom_node.node().getNumGeoms()):
-                mesh.addGeom(geom_node.node().getGeom(i))
-
-        shape = BulletTriangleMeshShape(mesh, dynamic=False) # собираем коллизию из геометрии
+        # mesh = BulletTriangleMesh()
+        # for geom_node in self.world.findAllMatches("**/+GeomNode"):
+        #     for i in range(geom_node.node().getNumGeoms()):
+        #         mesh.addGeom(geom_node.node().getGeom(i))
+        #
+        # shape = BulletTriangleMeshShape(mesh, dynamic=False) # собираем коллизию из геометрии
+        # shape.setMargin(0.0)
+        shape = BulletPlaneShape(Vec3(0, 0, 5), 1)
 
         self.world_body = BulletRigidBodyNode("world")
         self.world_body.setMass(0)
@@ -111,7 +112,7 @@ class Game(ShowBase):
         self.mouse_controls.capture()
         self.allTanks = NodePath("Tanks")
         self.allTanks.reparentTo(render)
-        self.localPlayer = Tank("localPlayer", Vec3(-30, -15, 0), False, self.allTanks)
+        self.localPlayer = Tank("localPlayer", Vec3(-30, -15, 1), False, self.allTanks)
         self.camera_controls.attach_player(self.localPlayer)
         self.render.setAntialias(AntialiasAttrib.MAuto)
         self.setup_debug()
@@ -124,7 +125,7 @@ class Game(ShowBase):
 
         self.camera_controls.update_camera_rotation(dt)
         self.camera_controls.update_camera_position(dt)
-        self.world.bullet_world.doPhysics(dt, 10, 1.0/180.0)
+        self.world.bullet_world.doPhysics(dt, 40, 1.0/360.0)
 
         return task.cont
 

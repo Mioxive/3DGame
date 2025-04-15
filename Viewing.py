@@ -63,17 +63,18 @@ class CameraControl:
             if base.controls.key_map["down"]:
                 self.target_vec.z -= self.camera_speed
 
-            self.moving_vec += (self.target_vec - self.moving_vec) * self.acceleration * dt
+            self.moving_vec += (self.target_vec - self.moving_vec) * (1 - self.smooth_factor) * self.acceleration * dt
+
 
             self.cam_obj.setLinearMovement(self.moving_vec, False)
             camera.setPos(self.camera_control_node.getPos())
 
         else:
             sphere_radius = 10
-            target_pos = self.local_player.getPos() - Vec3(
+            target_pos = self.local_player.getPosForCamera() - Vec3(
                 sin(radians(-camera.getH())) * sphere_radius,
                 cos(radians(camera.getH())) * sphere_radius,
-                sin(radians(camera.getP() * 2)) * sphere_radius - 6
+                sin(radians(camera.getP())) * sphere_radius - 6
             )
             # дальше идет сложное нечто: сглаживание движения камеры от чата гпт
 
@@ -86,16 +87,25 @@ class CameraControl:
                 tank_to_cam = new_pos - self.local_player.getPos()
                 tank_to_cam.normalize()
                 
-                # вычисляем новое направление скольжения
-                slide_direction = Vec3(tank_to_cam.x, -tank_to_cam.y, 0)
+                # вычисляем новое направление скольжения (перпендикулярно направлению к танку)
+                slide_direction = Vec3(-tank_to_cam.y, tank_to_cam.x, 0)
                 
                 # сглаживаем изменение направления скольжения
                 self.last_slide_direction = self.last_slide_direction * (1 - self.smooth_factor) + slide_direction * self.smooth_factor
                 self.last_slide_direction.normalize()
                 
                 # пытаемся найти новую позицию, скользя по стене
-                slide_pos = new_pos + self.last_slide_direction * sphere_radius * 0.1
-                new_pos = self.check_collision(new_pos, slide_pos)
+                slide_attempt = new_pos + self.last_slide_direction * sphere_radius * 0.1
+                slide_pos = self.check_collision(new_pos, slide_attempt)
+                
+                # если скольжение в этом направлении невозможно, пробуем в противоположном
+                if (slide_pos - new_pos).length() < 0.01:
+                    slide_direction = -slide_direction
+                    self.last_slide_direction = slide_direction
+                    slide_attempt = new_pos + slide_direction * sphere_radius * 0.1
+                    slide_pos = self.check_collision(new_pos, slide_attempt)
+                
+                new_pos = slide_pos
             
             # сглаживаем движение камеры
             final_pos = current_pos * (1 - self.smooth_factor) + new_pos * self.smooth_factor
@@ -118,7 +128,7 @@ class CameraControl:
         self.local_player = player
         player.has_camera = True
         self.is_spectating = False
-        camera.setPos(self.local_player.getPos() - Vec3(0, 10, -6))
+        self.camera_control_node.setPos(self.local_player.getPos() - Vec3(0, 10, -6))
 
     def unattach_player(self):
         self.local_player.has_camera = False
@@ -128,6 +138,9 @@ class CameraControl:
     def scope(self):
         if self.local_player and not self.is_spectating:
             pass  # прицел-zoom
+
+    def get_pov(self):
+        pass
 
 
 class MouseControl:
