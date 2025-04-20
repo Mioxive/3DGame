@@ -101,6 +101,7 @@ class GameControls(DirectObject):
 class Game(ShowBase):
     def __init__(self):
         super().__init__(self)
+        self.debugNP = None
         self.settings = GameSettings()
         self.settings.apply_settings()
         self.world = GameWorld()

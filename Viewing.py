@@ -6,6 +6,7 @@ from math import radians, cos, sin
 class CameraControl:
     def __init__(self):
         self.camera_speed = 25
+        self.max_ray_len = 500
         self.is_spectating = True
         base.camLens.setFov(base.settings.fov)
 
@@ -27,16 +28,33 @@ class CameraControl:
         self.target_vec = Vec3(0, 0, 0)
         self.acceleration = 16  # ускорение
 
-        self.last_cam_positions = [self.camera_control_node.getPos()] * 2
-        self.smooth_factor = 0.1
+        self.smooth_factor = 0.2
         self.last_slide_direction = Vec3(0, 0, 0)
 
     def check_collision(self, start_pos, end_pos):
         result = base.world.bullet_world.rayTestClosest(start_pos, end_pos)
         if result.hasHit():
             hit_pos = result.getHitPos()
-            return hit_pos + (start_pos - end_pos).normalized() * 0.1
+            return hit_pos + (start_pos - end_pos).normalized()
         return end_pos
+
+    def check_collision2(self, start_pos, end_pos):
+        result = base.world.bullet_world.rayTestClosest(start_pos, end_pos)
+        if result.hasHit():
+            hit_pos = result.getHitPos()
+            return hit_pos
+        return end_pos
+
+    def shoot_collision_ray(self):
+        start_pos = self.camera_control_node.getPos()
+
+        end_pos = start_pos + Vec3(
+            -sin(radians(camera.getH())),
+            cos(radians(camera.getH())),
+            sin(radians(camera.getP()))
+        ) * self.max_ray_len
+        result = self.check_collision2(start_pos, end_pos)
+        return result
 
     def update_camera_position(self, dt):
         # НЕ СМОТРИТЕ СЮДА!!!!
@@ -65,7 +83,6 @@ class CameraControl:
 
             self.moving_vec += (self.target_vec - self.moving_vec) * (1 - self.smooth_factor) * self.acceleration * dt
 
-
             self.cam_obj.setLinearMovement(self.moving_vec, False)
             camera.setPos(self.camera_control_node.getPos())
 
@@ -80,33 +97,35 @@ class CameraControl:
 
             # проверяем коллизию от текущей позиции к целевой
             current_pos = self.camera_control_node.getPos()
-            new_pos = self.check_collision(current_pos, target_pos) # позиция, уменьшенная до точки столкновения
+            new_pos = self.check_collision(current_pos, target_pos)  # позиция, уменьшенная до точки столкновения
 
-            if (new_pos - target_pos).length() > 0.1: # если позиция камеры не совпадает с целевой (то есть произошло столкновение)
+            if (
+                    new_pos - target_pos).length() > 0.1:  # если позиция камеры не совпадает с целевой (то есть произошло столкновение)
                 # находим направление от танка к камере
                 tank_to_cam = new_pos - self.local_player.getPos()
                 tank_to_cam.normalize()
-                
+
                 # вычисляем новое направление скольжения (перпендикулярно направлению к танку)
                 slide_direction = Vec3(-tank_to_cam.y, tank_to_cam.x, 0)
-                
+
                 # сглаживаем изменение направления скольжения
-                self.last_slide_direction = self.last_slide_direction * (1 - self.smooth_factor) + slide_direction * self.smooth_factor
+                self.last_slide_direction = self.last_slide_direction * (
+                            1 - self.smooth_factor) + slide_direction * self.smooth_factor
                 self.last_slide_direction.normalize()
-                
+
                 # пытаемся найти новую позицию, скользя по стене
                 slide_attempt = new_pos + self.last_slide_direction * sphere_radius * 0.1
                 slide_pos = self.check_collision(new_pos, slide_attempt)
-                
+
                 # если скольжение в этом направлении невозможно, пробуем в противоположном
                 if (slide_pos - new_pos).length() < 0.01:
                     slide_direction = -slide_direction
                     self.last_slide_direction = slide_direction
                     slide_attempt = new_pos + slide_direction * sphere_radius * 0.1
                     slide_pos = self.check_collision(new_pos, slide_attempt)
-                
+
                 new_pos = slide_pos
-            
+
             # сглаживаем движение камеры
             final_pos = current_pos * (1 - self.smooth_factor) + new_pos * self.smooth_factor
             self.camera_control_node.setPos(final_pos)
@@ -118,9 +137,7 @@ class CameraControl:
 
             new_h = camera.getH() - delta_x * dt * base.mouse_controls.sensitivity  # нет ограничений: можем вертеть камерой по оси X на 360 градусов
             new_p = camera.getP() - delta_y * dt * base.mouse_controls.sensitivity
-            new_p = min(90, max(-90, new_p))  # а тут ограничения есть:
-            # мы не можем поднимать камеру выше 90 градусов и ниже -90
-            # так что мы ограничиваем возможный диапазон между -90 и 90 градусов
+            new_p = min(90, max(-90, new_p))
             camera.setHpr(new_h, new_p, 0)
             self.camera_control_node.setHpr(new_h, new_p, 0)
 
@@ -138,9 +155,6 @@ class CameraControl:
     def scope(self):
         if self.local_player and not self.is_spectating:
             pass  # прицел-zoom
-
-    def get_pov(self):
-        pass
 
 
 class MouseControl:
@@ -161,7 +175,6 @@ class MouseControl:
             base.settings.winproperties.setMouseMode(WindowProperties.M_confined)
             base.settings.apply_settings()
             self.center()
-            
 
     def release(self):
         self.is_captured = False
