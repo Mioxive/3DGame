@@ -8,6 +8,7 @@ from panda3d.bullet import BulletWorld, BulletTriangleMesh, BulletTriangleMeshSh
     BulletDebugNode, BulletPlaneShape
 from Viewing import CameraControl, MouseControl
 from Tank import Tank
+from gui import GUI
 
 loadPrcFile("cfg.prc")
 # loadPrcFileData("", "want-directtools #t")
@@ -108,6 +109,7 @@ class Game(ShowBase):
         self.controls = GameControls()
         self.mouse_controls = MouseControl()
         self.camera_controls = CameraControl()
+        self.gui = GUI()
         self.controls.setup_controls()
         self.updateTask = self.taskMgr.add(self.update, "update")
         self.mouse_controls.capture()
