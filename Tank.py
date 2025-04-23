@@ -50,6 +50,7 @@ class Tank:
         self.main_tank_node.setPos(pos)
         self.has_camera = hascamera
         self.hp = 1000
+        self.max_hp = 1000
         self.engine_force = 30000
         self.angle = self.model.getH()
         self.max_motor_impulse = 13000
@@ -240,11 +241,11 @@ class Tank:
             offset = target_angle - current_angle
 
             if offset > 180:
-                offset = 360 - offset
+                offset = -(360 - offset)
                 if offset > self.max_turret_speed:
                     offset = self.max_turret_speed
             elif offset < -180:
-                offset = 360 + offset
+                offset = -(360 + offset)
                 if offset < -self.max_turret_speed:
                     offset = -self.max_turret_speed
             elif offset == 180 or offset == -180:
@@ -261,22 +262,48 @@ class Tank:
 
     def update_gun_position(self, dt):
         if self.has_camera:
-            target_point = base.camera_controls.shoot_collision_ray()
-            gun_pos = self.gun_body_node.getPos(render)
+            clear_vectors()
 
+            target_point = base.camera_controls.shoot_collision_ray()
+
+            hull_pos = self.hull_body_node.getPos(render)
+            turret_offset = Vec3(0, 0, 2.4)
+            
             turret_h = self.turret_body_node.getH(render)
+            gun_p = self.gun_body_node.getP(render)
+            
+            gun_offset_local = Vec3(0, 0.4, 1.0)
+            gun_offset_world = Vec3(
+                gun_offset_local.y * sin(radians(-turret_h)) + gun_offset_local.x * cos(radians(-turret_h)),
+                gun_offset_local.y * cos(radians(-turret_h)) - gun_offset_local.x * sin(radians(-turret_h)),
+                gun_offset_local.z
+            )
+            
+            gun_base_pos = hull_pos + turret_offset + gun_offset_world
+            
             turret_direction = Vec3(-sin(radians(turret_h)), cos(radians(turret_h)), 0)
             
-            aim_vector = target_point - gun_pos
+            gun_direction = Vec3(
+                -sin(radians(turret_h)) * cos(radians(gun_p)),
+                cos(radians(turret_h)) * cos(radians(gun_p)),
+                sin(radians(gun_p))
+            )
+            
+            final_gun_pos = gun_base_pos + gun_direction
+            
+            draw_vector(gun_base_pos, turret_direction * 5, Vec4(1, 0, 0, 1), 2)
+            draw_vector(gun_base_pos, gun_direction * 10, Vec4(0, 0, 1, 1), 2)
+            
+            aim_vector = target_point - final_gun_pos
+            draw_vector(final_gun_pos, aim_vector, Vec4(0, 1, 0, 1), 2)
             
             forward_projection = turret_direction.dot(Vec3(aim_vector.x, aim_vector.y, 0)) / turret_direction.length()
-
             angle = degrees(atan2(aim_vector.z, forward_projection))
             
             if angle > 30:
                 angle = 30
-            elif angle < -5:
-                angle = -5
+            elif angle < 0:
+                angle = 0
                 
             current_angle = self.gun_cs.getHingeAngle()
             angle_diff = angle - current_angle
@@ -296,3 +323,31 @@ class Tank:
 
     def getHpr(self):
         return self.model.getHpr()
+        
+    def get_gun_position_for_shot(self):
+        hull_pos = self.hull_body_node.getPos(render)
+        turret_offset = Vec3(0, 0, 2.4)
+        
+        turret_h = self.turret_body_node.getH(render)
+        gun_p = self.gun_body_node.getP(render)
+        
+        gun_offset_local = Vec3(0, 1.0, 0.5)
+        
+        gun_offset_world = Vec3(
+            gun_offset_local.y * sin(radians(-turret_h)) + gun_offset_local.x * cos(radians(-turret_h)),
+            gun_offset_local.y * cos(radians(-turret_h)) - gun_offset_local.x * sin(radians(-turret_h)),
+            gun_offset_local.z
+        ) # угол наклона пушки с учетом поворота башни
+        
+        gun_base_pos = hull_pos + turret_offset + gun_offset_world
+        
+        gun_direction = Vec3(
+            -sin(radians(turret_h)) * cos(radians(gun_p)),
+            cos(radians(turret_h)) * cos(radians(gun_p)),
+            sin(radians(gun_p))
+        )
+        
+        final_gun_pos = gun_base_pos + gun_direction * 2.0
+        
+        return final_gun_pos
+        
