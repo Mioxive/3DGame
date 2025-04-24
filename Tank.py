@@ -7,7 +7,7 @@ from panda3d.core import NodePath, Vec3, Point3, AlphaTestAttrib, RenderAttrib, 
 from direct.showbase.ShowBaseGlobal import globalClock
 from panda3d.core import BitMask32, LineSegs
 from math import sin, cos, radians, pi, gamma, degrees, atan2, sqrt, acos
-
+from BulletManager import Bullet, BulletManager
 vectors = []
 
 def draw_vector(pos, vector, color=Vec4(1, 0, 0, 1), thickness=2):
@@ -52,12 +52,14 @@ class Tank:
         self.hp = 1000
         self.max_hp = 1000
         self.engine_force = 30000
-        self.angle = self.model.getH()
         self.max_motor_impulse = 13000
         self.gain = 200000
         self.max_turret_speed = 30.0
+        
+        self.reload_time = 3.0
+        self.last_shot_time = 0
+        self.is_reloading = False
 
-        # разделение на составляющие для управления частями танка
         self.gun = self.model.find("**/gun")
         self.hull = self.model.find("**/hull")
         self.turret = self.model.find("**/turret")
@@ -100,6 +102,7 @@ class Tank:
         hull_body.setDeactivationEnabled(False)
 
         self.hull_body_node = self.main_tank_node.attachNewNode(hull_body)
+        self.hull_body_node.setPythonTag('tank', self)
         base.world.bullet_world.attachRigidBody(hull_body)
 
         turret_mesh = BulletTriangleMesh()
@@ -115,7 +118,7 @@ class Tank:
         turret_body.addShape(turret_shape)
         turret_body.setDeactivationEnabled(False)
         self.turret_body_node = self.main_tank_node.attachNewNode(turret_body)
-
+        self.turret_body_node.setPythonTag('tank', self)
         base.world.bullet_world.attachRigidBody(turret_body)
 
         gun_mesh = BulletTriangleMesh()
@@ -184,6 +187,13 @@ class Tank:
         self.update_model()
         self.update_turret_position(dt)
         self.update_gun_position(dt)
+        
+        self.shoot()
+        
+        if self.is_reloading:
+            current_time = globalClock.getFrameTime()
+            if current_time - self.last_shot_time >= self.reload_time:
+                self.is_reloading = False
 
         return task.cont
 
@@ -323,6 +333,11 @@ class Tank:
 
     def getHpr(self):
         return self.model.getHpr()
+    
+    def damage(self, damage):
+        self.hp -= damage
+        if self.hp <= 0:
+            self.main_tank_node.hide()
         
     def get_gun_position_for_shot(self):
         hull_pos = self.hull_body_node.getPos(render)
@@ -337,7 +352,7 @@ class Tank:
             gun_offset_local.y * sin(radians(-turret_h)) + gun_offset_local.x * cos(radians(-turret_h)),
             gun_offset_local.y * cos(radians(-turret_h)) - gun_offset_local.x * sin(radians(-turret_h)),
             gun_offset_local.z
-        ) # угол наклона пушки с учетом поворота башни
+        ) 
         
         gun_base_pos = hull_pos + turret_offset + gun_offset_world
         
@@ -345,9 +360,22 @@ class Tank:
             -sin(radians(turret_h)) * cos(radians(gun_p)),
             cos(radians(turret_h)) * cos(radians(gun_p)),
             sin(radians(gun_p))
-        )
+        ) # угол наклона пушки с учетом поворота башни да
         
-        final_gun_pos = gun_base_pos + gun_direction * 2.0
+        final_gun_pos = gun_base_pos + gun_direction * 7.0
         
         return final_gun_pos
-        
+	
+    def shoot(self):
+        if base.controls.key_map["shoot"] and not self.is_reloading and self.has_camera:
+            
+            direction = Vec3(
+                -sin(radians(self.turret_body_node.getH(render))) * cos(radians(self.gun_body_node.getP(render))),
+                cos(radians(self.turret_body_node.getH(render))) * cos(radians(self.gun_body_node.getP(render))),
+                sin(radians(self.gun_body_node.getP(render)))
+            ).normalized()
+            
+            base.bullet_manager.add_bullet(self, direction)
+
+            self.last_shot_time = globalClock.getFrameTime()
+            self.is_reloading = True

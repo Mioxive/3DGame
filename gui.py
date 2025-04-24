@@ -1,5 +1,7 @@
 from direct.gui.DirectGui import *
 from panda3d.core import *
+from direct.task.TaskManagerGlobal import taskMgr
+from direct.showbase.ShowBaseGlobal import globalClock
 
 class GUI:
     def __init__(self):
@@ -8,9 +10,12 @@ class GUI:
         self.setup_crosshair()
         self.setup_minimap()
         self.setup_tank_info()
+        self.setup_reload_indicator()
+        
+        taskMgr.add(self.update_reload_indicator, "update_reload_indicator")
 
     def setup_crosshair(self):
-        #Прицел
+        # Прицел
         self.crosshair = OnscreenImage(
             image='textures/crosshair.png',
             pos=(0, 0, 0),
@@ -45,36 +50,28 @@ class GUI:
         # Информация о танке
         self.tank_info_frame = DirectFrame(
             frameSize=(-0.4, 0.3, -0.2, 0.2),
-            pos=(-1.355, 0, -0.8),
+            pos=(-1.35, 0, -0.8),
             frameColor=(0, 0, 0, 0.5)
         )
         
         self.tank_name_label = DirectLabel(
             parent=self.tank_info_frame,
-            text="Tank",
+            text=f"Tank {base.localPlayer.name}",
             pos=(-0.1, 0, 0.1),
             scale=0.07,
-            text_fg=(1, 1, 0, 1),
+            text_fg=(1, 1, 1, 1),
             frameColor=(0, 0, 0, 0)
         )
         
         self.health_label = DirectLabel(
             parent=self.tank_info_frame,
-            text="Protect: 100%",
+            text=f"Protect: {(base.localPlayer.hp / base.localPlayer.max_hp * 100):.2f}%",
             pos=(-0.1, 0, 0),
             scale=0.05,
             text_fg=(1, 1, 1, 1),
             frameColor=(0, 0, 0, 0)
         )
-        
-        self.ammo_label = DirectLabel(
-            parent=self.tank_info_frame,
-            text="Ammunition: 30/40",
-            pos=(-0.1, 0, -0.1),
-            scale=0.05,
-            text_fg=(1, 1, 1, 1),
-            frameColor=(0, 0, 0, 0)
-        )
+
     
 #    def setup_bottom_panel(self):
 #        # Панель внизу экрана
@@ -94,25 +91,55 @@ class GUI:
             scale=0.3
         )
 
-    def move_tank(self, direction):
-        if hasattr(self, 'tank'):
-            speed = direction * 10
-            self.tank.setY(self.tank, speed * globalClock.getDt())
-            self.speed_label["text"] = f"Speed: {abs(speed)*3} км/ч"
+    def setup_reload_indicator(self):
+        # индикатор перезарядки вонючий
+        self.reload_bar_frame = DirectFrame(
+            frameSize=(-0.2, 0.2, -0.03, 0.03),
+            pos=(0, 0, -0.9),
+            frameColor=(0.1, 0.1, 0.1, 0.8)
+        )
+        
+        self.reload_bar = DirectWaitBar(
+            parent=self.reload_bar_frame,
+            range=100,
+            value=100,
+            barColor=(0.2, 0.7, 0.2, 0.8),
+            frameColor=(0, 0, 0, 0.5),
+            frameSize=(-0.19, 0.19, -0.02, 0.02),
+            pos=(0, 0, 0)
+        )
+        
+        self.reload_label = DirectLabel(
+            parent=self.reload_bar_frame,
+            text="Rеady",
+            scale=0.04,
+            pos=(0, 0, 0.04),
+            text_fg=(0.2, 1, 0.2, 1),
+            frameColor=(0, 0, 0, 0)
+        )
+
+    def update_reload_indicator(self, task):
+        if base.localPlayer.is_reloading:
+            current_time = globalClock.getFrameTime()
+            time_since_shot = current_time - base.localPlayer.last_shot_time
+            reload_progress = (time_since_shot / base.localPlayer.reload_time) * 100
+            
+            self.reload_bar['value'] = reload_progress
+            self.reload_bar['barColor'] = (1, 0.5, 0, 0.8)
+            self.reload_label['text'] = f"Reloading: {reload_progress:.0f}%"
+            self.reload_label['text_fg'] = (1, 0.5, 0, 1)
+        else:
+            self.reload_bar['value'] = 100
+            self.reload_bar['barColor'] = (0.2, 0.7, 0.2, 0.8)
+            self.reload_label['text'] = "Ready"
+            self.reload_label['text_fg'] = (0.2, 1, 0.2, 1)
+                
+        return task.cont
+
     
-    def rotate_tank(self, direction):
-        if hasattr(self, 'tank'):
-            self.tank.setH(self.tank, direction * 60 * globalClock.getDt())
-    
-    def fire(self):
-        print("Бах!")
-        # Выстрел
     
     def do_repair(self):
         self.health_bar["value"] = 100
         self.health_label["text"] = "Endurance: 100%"
         print("Танк отремонтирован")
     
-    def reload_ammo(self):
-        self.ammo_label["text"] = "Ammunition: 40/40"
-        print("Боезапас пополнен")

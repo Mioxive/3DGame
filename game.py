@@ -7,8 +7,9 @@ from panda3d.core import WindowProperties, Vec3, loadPrcFile, AmbientLight, Node
 from panda3d.bullet import BulletWorld, BulletTriangleMesh, BulletTriangleMeshShape, BulletRigidBodyNode, \
     BulletDebugNode, BulletPlaneShape
 from Viewing import CameraControl, MouseControl
-from Tank import Tank
 from gui import GUI
+from BulletManager import BulletManager
+from Tank import Tank
 
 loadPrcFile("cfg.prc")
 # loadPrcFileData("", "want-directtools #t")
@@ -109,7 +110,6 @@ class Game(ShowBase):
         self.controls = GameControls()
         self.mouse_controls = MouseControl()
         self.camera_controls = CameraControl()
-        self.gui = GUI()
         self.controls.setup_controls()
         self.updateTask = self.taskMgr.add(self.update, "update")
         self.mouse_controls.capture()
@@ -120,8 +120,8 @@ class Game(ShowBase):
         self.render.setAntialias(AntialiasAttrib.MAuto)
         self.setup_debug()
         self.display_scene_graph(render)
-        self.enableParticles()
-
+        self.gui = GUI()
+        self.bullet_manager = BulletManager()
 
     def update(self, task):
         dt = globalClock.getDt()

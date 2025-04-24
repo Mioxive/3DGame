@@ -26,7 +26,7 @@ class CameraControl:
 
         self.moving_vec = Vec3(0, 0, 0)
         self.target_vec = Vec3(0, 0, 0)
-        self.acceleration = 16  # ускорение
+        self.acceleration = 16
 
         self.smooth_factor = 0.2
         self.last_slide_direction = Vec3(0, 0, 0)
