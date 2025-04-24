@@ -10,6 +10,7 @@ from Viewing import CameraControl, MouseControl
 from gui import GUI
 from BulletManager import BulletManager
 from Tank import Tank
+from menu import MainMenu
 
 loadPrcFile("cfg.prc")
 # loadPrcFileData("", "want-directtools #t")
@@ -103,6 +104,7 @@ class GameControls(DirectObject):
 class Game(ShowBase):
     def __init__(self):
         super().__init__(self)
+        self.menu = MainMenu()
         self.debugNP = None
         self.settings = GameSettings()
         self.settings.apply_settings()
@@ -120,7 +122,7 @@ class Game(ShowBase):
         self.render.setAntialias(AntialiasAttrib.MAuto)
         self.setup_debug()
         self.display_scene_graph(render)
-        self.gui = GUI()
+        self.gui = GUI(hp= self.localPlayer.hp, max_hp=self.localPlayer.max_hp)
         self.bullet_manager = BulletManager()
 
     def update(self, task):

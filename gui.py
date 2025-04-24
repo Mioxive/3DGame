@@ -4,12 +4,14 @@ from direct.task.TaskManagerGlobal import taskMgr
 from direct.showbase.ShowBaseGlobal import globalClock
 
 class GUI:
-    def __init__(self):
+    def __init__(self, hp, max_hp):
+        self.hp = hp
+        self.max_hp = max_hp
 
         # Основные элементы GUI
         self.setup_crosshair()
         self.setup_minimap()
-        self.setup_tank_info()
+        self.setup_health_bar()
         self.setup_reload_indicator()
         self.setup_aim_crosshair()
 
@@ -40,13 +42,21 @@ class GUI:
             scale=0.3
         )
         
-        # Иконка игрока на миникарте
-        #self.player_minimap_icon = OnscreenImage(
-        #    parent=self.minimap_frame,
-        #    image='textures/player_icon.png',
-        #    pos=(0, 0, 0),
-        #    scale=0.03
-        #)
+    def setup_health_bar(self):
+        #Полоса здоровья
+        self.hp_bar = DirectWaitBar(
+            value=self.hp,                     # Текущее значение HP
+            range=self.max_hp,                 # Максимальное значение HP
+            pos=(0, 0, -0.9),               # Позиция (x, y, z) на экране
+            scale=(0.5, 0.5, 0.5),           # Масштаб (ширина, высота, толщина)
+            frameColor=(0.5, 0.5, 0.5, 1),     # Цвет рамки (серый)
+            barColor=(1, 0, 0, 1),             # Цвет полоски (красный)
+            text="HP: %d/%d" % (self.hp, self.max_hp),  # Текст
+            text_scale=0.1,                   # Размер текста
+            text_fg=(1, 1, 1, 1),              # Цвет текста (белый)
+            text_pos=(0, -0.05),               # Смещение текста
+        )
+
     
     def setup_tank_info(self):
         # Информация о танке
@@ -74,30 +84,26 @@ class GUI:
             frameColor=(0, 0, 0, 0)
         )
 
-    
-#    def setup_bottom_panel(self):
-#        # Панель внизу экрана
-#        self.bottom_panel = DirectFrame(
-#            frameSize=(-1, 1, -0.1, 0.1),
-#            pos=(0, 0, -0.9),
-#            frameColor=(0, 0, 0, 0.7)
-#        )
     def setup_health_bar(self):
         #Полоса здоровья
-        self.health_bar = DirectWaitBar(
-            value=100,
-            range=100,
-            pos=(0, 0, -0.85),
-            barColor=(0.8, 0.2, 0.2, 0.8),
-            frameColor=(0.1, 0.1, 0.1, 0.8),
-            scale=0.3
+        self.hp_bar = DirectWaitBar(
+            value=self.hp,                     # Текущее значение HP
+            range=self.max_hp,                 # Максимальное значение HP
+            pos=(0, 0, -0.9),               # Позиция (x, y, z) на экране
+            scale=(0.5, 0.5, 0.5),           # Масштаб (ширина, высота, толщина)
+            frameColor=(0.5, 0.5, 0.5, 1),     # Цвет рамки (серый)
+            barColor=(1, 0, 0, 1),             # Цвет полоски (красный)
+            text="HP: %d/%d" % (self.hp, self.max_hp),  # Текст
+            text_scale=0.1,                   # Размер текста
+            text_fg=(1, 1, 1, 1),              # Цвет текста (белый)
+            text_pos=(0, -0.05),               # Смещение текста
         )
 
     def setup_reload_indicator(self):
         # индикатор перезарядки вонючий
         self.reload_bar_frame = DirectFrame(
             frameSize=(-0.2, 0.2, -0.03, 0.03),
-            pos=(0, 0, -0.9),
+            pos=(0, 0, -0.8),
             frameColor=(0.1, 0.1, 0.1, 0.8)
         )
         
@@ -113,7 +119,7 @@ class GUI:
         
         self.reload_label = DirectLabel(
             parent=self.reload_bar_frame,
-            text="Rеady",
+            text="Ready",
             scale=0.04,
             pos=(0, 0, 0.04),
             text_fg=(0.2, 1, 0.2, 1),
