@@ -249,6 +249,7 @@ class Tank:
             target_angle = camera.getH()
             current_angle = self.cs.getHingeAngle() + self.hull_body_node.getH()
             offset = target_angle - current_angle
+            
 
             if offset > 180:
                 offset = -(360 - offset)
@@ -258,9 +259,9 @@ class Tank:
                 offset = -(360 + offset)
                 if offset < -self.max_turret_speed:
                     offset = -self.max_turret_speed
-            elif offset == 180 or offset == -180:
+            elif offset == round(180) or offset == round(-180):
                 offset = self.max_turret_speed
-
+            
             if abs(offset) < 0.3:
                 offset = 0
                 self.cs.enableAngularMotor(False, 0, 0)
@@ -366,6 +367,13 @@ class Tank:
         
         return final_gun_pos
 	
+    def get_gun_direction(self):
+        return Vec3(
+            -sin(radians(self.turret_body_node.getH(render))) * cos(radians(self.gun_body_node.getP(render))),
+            cos(radians(self.turret_body_node.getH(render))) * cos(radians(self.gun_body_node.getP(render))),
+            sin(radians(self.gun_body_node.getP(render)))
+        ).normalized()
+        
     def shoot(self):
         if base.controls.key_map["shoot"] and not self.is_reloading and self.has_camera:
             

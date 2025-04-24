@@ -11,13 +11,15 @@ class GUI:
         self.setup_minimap()
         self.setup_tank_info()
         self.setup_reload_indicator()
-        
+        self.setup_aim_crosshair()
+
         taskMgr.add(self.update_reload_indicator, "update_reload_indicator")
+        taskMgr.add(self.update_aim_crosshair, "update_aim_crosshair")
 
     def setup_crosshair(self):
         # Прицел
         self.crosshair = OnscreenImage(
-            image='textures/crosshair.png',
+            image='textures/crosshair_main.png',
             pos=(0, 0, 0),
             scale=0.05
         )
@@ -118,7 +120,48 @@ class GUI:
             frameColor=(0, 0, 0, 0)
         )
 
+    def setup_aim_crosshair(self):
+
+        self.aim_crosshair = OnscreenImage(
+            image='textures/crosshair.png',
+            pos=(0, 0, 0),
+            scale=0.05
+        )
+        self.aim_crosshair.setTransparency(TransparencyAttrib.MAlpha)
+
+    def world_to_screen_coords(self, pos_3d):
+        point3 = base.cam.getRelativePoint(render, pos_3d)
+        point2 = Point2()
+
+        if not base.camLens.project(point3, point2):
+            return None
+
+        return point2
+        
+    def update_aim_crosshair(self, task):
+        if not base.localPlayer.has_camera:
+            self.aim_crosshair.hide()
+            return task.cont
+
+        gun_pos = base.localPlayer.get_gun_position_for_shot()
+        gun_dir = base.localPlayer.get_gun_direction()
+
+        result = base.camera_controls.check_collision2(Vec3(gun_pos), Vec3(gun_pos + gun_dir * 1000))
+
+        screen_pos = self.world_to_screen_coords(result)
+        
+        if screen_pos:
+            self.aim_crosshair.show()
+            self.aim_crosshair.setPos(screen_pos.x, 0, screen_pos.y)
+
+        else:
+            self.aim_crosshair.hide()
+
+        return task.cont
+        
+
     def update_reload_indicator(self, task):
+
         if base.localPlayer.is_reloading:
             current_time = globalClock.getFrameTime()
             time_since_shot = current_time - base.localPlayer.last_shot_time
@@ -135,11 +178,6 @@ class GUI:
             self.reload_label['text_fg'] = (0.2, 1, 0.2, 1)
                 
         return task.cont
+    
 
-    
-    
-    def do_repair(self):
-        self.health_bar["value"] = 100
-        self.health_label["text"] = "Endurance: 100%"
-        print("Танк отремонтирован")
-    
+
